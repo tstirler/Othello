@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.Windows;
+
 namespace Othello
 {
     class Program
@@ -19,9 +21,7 @@ namespace Othello
 
             GameBoard gameBoard = new GameBoard();
             gameBoard.initializeBoard();
-
-            int[] score = new int[2];
-            score = calculateScore(gameBoard.board);
+            gameBoard.calculateScore();
 
             int counter = 0;
             bool gameRunning = true;
@@ -30,38 +30,71 @@ namespace Othello
             
             while (gameRunning)
             {
-                WriteAt("White: " + score[0] + " - " + "Black: " + score[1], (windowWidth / 3) - 8, 0);
-                drawGrid(gameBoard.board);
+                WriteAt("White: " + gameBoard.score[0] + " - " + "Black: " + gameBoard.score[1], (windowWidth / 3) - 8, 0);
+                gameBoard.drawGrid();
                 do
                 {
-                    WriteAt("                                                                    ", 0, 39);
-                    WriteAt("                                                                    ", 0, 40);
-                    WriteAt(player + " player. Where do you want to put your piece? x,y ", 0, 39);
-                    Console.WriteLine("");
-                    playerSelected = inputPosition(Console.ReadLine());
-                    legalMove = checkValidMove(playerSelected, gameBoard.board, player);
+                    playerSelected = getMove();
+                    legalMove = gameBoard.checkValidMove(playerSelected, player);
                 } while (!legalMove);
-                
-                //placePiece();
-                //changeHorizontal();
-                //changekDiagonal();
-                //chhangeVertical();
-                calculateScore(gameBoard.board);
-                checkValidGame(score);
+                player = getPlayer();
+
+                gameBoard.placePiece(playerSelected, player);
+                gameBoard.calculateScore();
+                gameRunning = checkValidGame(gameBoard.score);
                 counter++;
-                gameRunning = false;
-                changePlayer(player);
+                player = changePlayer(player);
             }
-            checkWinner(score);
+        gameBoard.drawGrid();
+        checkWinner(gameBoard.score, counter);
         }
 
-        public static bool checkValidMove(int[] move, string[,] board, string player)
+        public static string getPlayer()
         {
+            string player;
+            WriteAt("                                                                    ", 0, 39);
+            WriteAt("                                                                    ", 0, 40);
+            WriteAt("What player is placing the piece?", 0, 39);
+            Console.WriteLine("");
+            try
+            {
+                player = Console.ReadLine();
+            }
+            catch (Exception)
+            {
+                player = getPlayer();
+            }
 
-            bool isValid = false;
-            return isValid;
+            return player;
         }
 
+        /// <summary>
+        /// Gets input from current player for where player wants to place the piece.
+        /// </summary>
+        /// <returns>string</returns>
+        public static int[] getMove()
+        {
+            int[] playerSelected = new int[2];
+            WriteAt("                                                                    ", 0, 39);
+            WriteAt("                                                                    ", 0, 40);
+            WriteAt("Where do you want to put your piece? x,y", 0, 39);
+            Console.WriteLine("");
+            try
+            {
+                playerSelected = inputPosition(Console.ReadLine());
+            }
+            catch (Exception)
+            {
+                playerSelected = getMove();
+            }
+            return playerSelected;
+        }
+
+        /// <summary>
+        /// Changes from passed player to opposite
+        /// </summary>
+        /// <param name="player">String: White/Black</param>
+        /// <returns>string: Black/White</returns>
         public static string changePlayer(string player)
         {
             if (player.Equals("White"))
@@ -75,6 +108,11 @@ namespace Othello
             return player;
         }
 
+        /// <summary>
+        /// Converts inputstring on form [A-H],[0-7] to numeric int[0-7,0-7]
+        /// </summary>
+        /// <param name="coordString">String: [A-H],[0-7]</param>
+        /// <returns>int[0-7,0-7]</returns>
         public static int[] inputPosition(string coordString)
         {
             int[] coordInt = new int[2];
@@ -98,9 +136,16 @@ namespace Othello
                 coordInt[counter] = Convert.ToInt32(c);
                 counter++;
             }
+
+            coordInt[1] = coordInt[1] - 1;
             return coordInt;
         }
 
+        /// <summary>
+        /// Checks if the game is stil valid to continue.
+        /// </summary>
+        /// <param name="score">int[2]</param>
+        /// <returns>true/false</returns>
         public static bool checkValidGame(int[] score) 
         {
             bool gameRunning = true;
@@ -115,83 +160,25 @@ namespace Othello
             return gameRunning;
         }
 
-        public static void checkWinner(int[] score) 
+        /// <summary>
+        /// Checkes the passed score to see who won
+        /// </summary>
+        /// <param name="score">int[2]</param>
+        /// <param name="numberOfTurns">int</param>
+        public static void checkWinner(int[] score, int numberOfTurns) 
         {
             if (score[0] > score[1])
             {
-                Console.WriteLine("White is the winner!");
+                Console.WriteLine("White is the winner! Won in " + numberOfTurns + " turns.");
             }
             else if (score[0] < score[1])
             {
-                Console.WriteLine("Black is the winner!");
+                Console.WriteLine("Black is the winner! Won in " + numberOfTurns + " turns.");
             }
             else
             {
-                Console.WriteLine("It is a tie!");
+                Console.WriteLine("It is a tie! It took " + numberOfTurns + " turns");
             }
-        }
-
-        public static int[] calculateScore(string[,] board)
-        {
-            int[] score = new int[2];
-            foreach (string piece in board)
-            {
-                if (piece.Equals("W")) {
-                    score[0]++;
-                } else if (piece.Equals("B")) {
-                    score[1]++;
-                }
-            }
-            return score;
-        }
-
-        /// <summary>
-        /// Draws a 8x8 board on the screen.
-        /// </summary>
-        static void drawGrid(string[,] board)
-        {
-            int gridSize = 32;
-            int boxSize = gridSize / 8;
-            int pieceX_Offset = boxSize * 2;
-            int pieceY_Offset = 4;
-            int pieceOffset = 4;
-
-            int offset = 2;
-            int rowCounter = 0;
-            string[] rowName = new string[8] {"A", "B", "C", "D", "E", "F", "G", "H"};
-            string[] columnName = new string[8] {"1", "2", "3", "4", "5", "6", "7", "8"};
-
-            // printing the grid.
-            for (int lineCount = offset; lineCount <= (8 * boxSize) + offset; lineCount += boxSize)
-            {   
-                for (int horizontalLine = boxSize + offset; horizontalLine <= (9 * boxSize) + offset; horizontalLine++)
-                {
-                    WriteAt("-", horizontalLine, lineCount);
-                }
-
-                for (int verticalCoord = offset; verticalCoord <= (8 * boxSize) + offset; verticalCoord++)
-                {
-                    WriteAt("|", lineCount + boxSize, verticalCoord);
-                }
-
-                if (lineCount < 8 * boxSize)
-                {
-                    WriteAt(rowName[rowCounter], offset, lineCount + 2);
-                    WriteAt(columnName[rowCounter], lineCount + boxSize + 2, (8 * boxSize) + offset + 1);
-                    rowCounter++;
-                }
-            }
-            WriteAt("", 1, 9 * boxSize);
-
-            //print the pieces
-            for (int x = 0; x < 8; x++)
-            {
-                for (int y = 0; y < 8; y++)
-                {
-                    WriteAt(board[x, y], pieceX_Offset + (x * pieceOffset), pieceY_Offset + (y * pieceOffset));
-                }
-            }
-            WriteAt("", 0, 39);
         }
         
         /// <summary>
@@ -215,11 +202,19 @@ namespace Othello
         }
     }
 }
+
+/// <summary>
+/// GameBoard Class contains gameBoard object definition and board-methods.
+/// </summary>
 class GameBoard
 {
+    int[] score = new int[2];
     public string[,] board = new string[8, 8];
     public GameBoard() { }
 
+    /// <summary>
+    /// Initializes the board, filling the array with default pieces, and blank for the rest of the board.
+    /// </summary>
     public void initializeBoard()
     {
         for (int x = 0; x < 8; x++)
@@ -234,5 +229,220 @@ class GameBoard
         this.board[4, 3] = "B";
         this.board[4, 4] = "W";
     }
-}
 
+    /// <summary>
+    /// Places the players piece on the selected location
+    /// </summary>
+    /// <param name="playerSelected">Coords for the piece. int[2]</param>
+    /// <param name="player">string: White/Black</param>
+    public void placePiece(int[] playerSelected, string player) 
+    {
+        this.board[playerSelected[1],playerSelected[0]] = Convert.ToString(player[0]);
+    }
+
+    /// <summary>
+    /// Loops through the gameboard and counts number of white and black pieces.
+    /// Score is saved in the objects int[] score.
+    /// </summary>
+    public void calculateScore()
+    {
+        //int[] score = new int[2];
+        foreach (string piece in this.board)
+        {
+            if (piece.Equals("W"))
+            {
+                this.score[0]++;
+            }
+            else if (piece.Equals("B"))
+            {
+                this.score[1]++;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Grabs and returns the objects int[] score.
+    /// </summary>
+    /// <returns>int[2]</returns>
+    public int[] getScore()
+    {
+
+    }
+
+    public void drawGrid()
+    {
+        int gridSize = 32;
+        int boxSize = gridSize / 8;
+        int pieceX_Offset = boxSize * 2;
+        int pieceY_Offset = 4;
+        int pieceOffset = 4;
+
+        int offset = 2;
+        int rowCounter = 0;
+        string[] rowName = new string[8] { "A", "B", "C", "D", "E", "F", "G", "H" };
+        string[] columnName = new string[8] { "1", "2", "3", "4", "5", "6", "7", "8" };
+
+        // printing the grid.
+        for (int lineCount = offset; lineCount <= (8 * boxSize) + offset; lineCount += boxSize)
+        {
+            for (int horizontalLine = boxSize + offset; horizontalLine <= (9 * boxSize) + offset; horizontalLine++)
+            {
+                Othello.Program.WriteAt("-", horizontalLine, lineCount);
+            }
+
+            for (int verticalCoord = offset; verticalCoord <= (8 * boxSize) + offset; verticalCoord++)
+            {
+                Othello.Program.WriteAt("|", lineCount + boxSize, verticalCoord);
+            }
+
+            if (lineCount < 8 * boxSize)
+            {
+                Othello.Program.WriteAt(rowName[rowCounter], offset, lineCount + 2);
+                Othello.Program.WriteAt(columnName[rowCounter], lineCount + boxSize + 2, (8 * boxSize) + offset + 1);
+                rowCounter++;
+            }
+        }
+        Othello.Program.WriteAt("", 1, 9 * boxSize);
+
+        //print the pieces
+        for (int x = 0; x < 8; x++)
+        {
+            for (int y = 0; y < 8; y++)
+            {
+                Othello.Program.WriteAt(this.board[x, y], pieceX_Offset + (x * pieceOffset), pieceY_Offset + (y * pieceOffset));
+            }
+        }
+        Othello.Program.WriteAt("", 0, 39);
+    }
+
+    public bool checkValidMove(int[] move, string player)
+    {
+        bool isValid;
+
+        if (move[0] < 8 && move[1] < 8 && this.board[move[1], move[0]].Equals(""))
+        {
+            if (checkPosition(move, player, "Up") ||checkPosition(move, player, "UpLeft") ||checkPosition(move, player, "Left") ||
+                checkPosition(move, player, "DownLeft") ||checkPosition(move, player, "Down") ||checkPosition(move, player, "DownRight") ||
+                checkPosition(move, player, "Right") ||checkPosition(move, player, "UpRight"))
+            {
+                isValid = true;
+            }
+            else
+            {
+                isValid = false;
+            }
+        }
+        else
+        {
+            isValid = false;
+        }
+        return isValid;
+    }
+
+    /// <summary>
+    /// Checks from the given position to the end of the board in the direction given.
+    /// </summary>
+    /// <param name="position">Position to check from int[2]</param>
+    /// <param name="player">Player placing the piece. string: White or Black</param>
+    /// <param name="direction">Direction to check. String: Up, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft</param>
+    /// <returns>Returns: true/false</returns>
+    public bool checkPosition(int[] position, string player, string direction)
+    {
+        bool isValid;
+        int offsetHorizontal;
+        int offsetVertical;
+        string lastChecked = player;
+
+        switch (direction)
+        {
+            case "Up":
+                offsetHorizontal = 0;
+                offsetVertical = 1;
+                break;
+            case "UpRight":
+                offsetHorizontal = 1;
+                offsetVertical = 1;
+                break;
+            case "Right":
+                offsetHorizontal = 1;
+                offsetVertical = 0;
+                break;
+            case "DownRight":
+                offsetHorizontal = 1;
+                offsetVertical = -1;
+                break;
+            case "Down":
+                offsetHorizontal = 0;
+                offsetVertical = -1;
+                break;
+            case "DownLeft":
+                offsetHorizontal = -1;
+                offsetVertical = -1;
+                break;
+            case "Left":
+                offsetHorizontal = -1;
+                offsetVertical = 0;
+                break;
+            case "UpLeft":
+                offsetHorizontal = -1;
+                offsetVertical = 1;
+                break;
+            default:
+                offsetHorizontal = 0;
+                offsetVertical = 0;
+                break;
+        }
+
+        if (offsetVertical == 0 || offsetHorizontal == 0)
+        {
+            return false;
+        }
+
+        int oppositeCount = 0;
+        int[] nextPosition = new int[2];
+        nextPosition[0] = position[0] + offsetVertical;
+        nextPosition[1] = position[1] + offsetHorizontal;
+        while (nextPosition[1] >= 0 && nextPosition[1] < 8)
+        {
+            // If the piece checked equals the players color, set the lastChecked to the same.
+            if (this.board[nextPosition[1], nextPosition[0]].Equals(player))
+            {
+                lastChecked = player;
+                break;
+            }
+            
+            //If the position checked is blank exit the While-loop
+            if (this.board[nextPosition[1], nextPosition[0]].Equals("")) 
+            {
+                break;
+            }
+
+            oppositeCount++;
+            
+            //If none of the above stops the loop, set lastChecked to opposite color of player.
+            if (player.Equals("White"))
+            {
+                lastChecked = "Black";
+            }
+            else
+            {
+                lastChecked = "White";
+            }
+
+            //change position to next piece to check.
+            nextPosition[1] = nextPosition[1] + offsetHorizontal;
+            nextPosition[0] = nextPosition[0] + offsetVertical;
+        }
+
+        if (oppositeCount > 0 && lastChecked.Equals(player))
+        {
+            isValid = true;
+        }
+        else
+        {
+            isValid = false;
+        }
+
+        return isValid;
+    }
+}
