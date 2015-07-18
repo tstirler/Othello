@@ -15,7 +15,7 @@ namespace Othello
             int windowWidth = 60;
             int windowHeigth = 50;
             string player = "White";
-            bool legalMove = false;
+            bool[] legalMove = new bool[9];
             int[] playerSelected = new int[2];
             Console.SetWindowSize(windowWidth, windowHeigth);
 
@@ -35,8 +35,8 @@ namespace Othello
                 do
                 {
                     playerSelected = getMove();
-                    legalMove = gameBoard.checkValidMove(playerSelected, player);
-                } while (!legalMove);
+                    legalMove[0] = gameBoard.checkValidMove(playerSelected, player);
+                } while (!legalMove[0]);
                 player = getPlayer();
 
                 gameBoard.placePiece(playerSelected, player);
@@ -341,32 +341,33 @@ class GameBoard
     /// <returns></returns>
     public bool checkValidMove(int[] move, string player)
     {
-        bool isValid, isValidUp, isValidUpLeft, isValidLeft, isValidDownLeft, isValidDown, isValidDownRight, isValidRight, isValidUpRight;
+        bool[] isValid = new bool[9];
+        bool isValidUp, isValidUpLeft, isValidLeft, isValidDownLeft, isValidDown, isValidDownRight, isValidRight, isValidUpRight;
 
 
-        isValidUp = checkPosition(move, player, "Up");
-        isValidUpLeft = checkPosition(move, player, "UpLeft");
-        isValidLeft = checkPosition(move, player, "Left");
-        isValidDownLeft = checkPosition(move, player, "DownLeft");
-        isValidDown = checkPosition(move, player, "Down");
-        isValidDownRight = checkPosition(move, player, "DownRight");
-        isValidRight = checkPosition(move, player, "Right");
-        isValidUpRight = checkPosition(move, player, "UpRight");
+        isValid[1] = isValidUp = checkPosition(move, player, "Up", false);
+        isValid[8] = isValidUpLeft = checkPosition(move, player, "UpLeft", false);
+        isValid[7] = isValidLeft = checkPosition(move, player, "Left", false);
+        isValid[6] = isValidDownLeft = checkPosition(move, player, "DownLeft", false);
+        isValid[5] = isValidDown = checkPosition(move, player, "Down", false);
+        isValid[4] = isValidDownRight = checkPosition(move, player, "DownRight", false);
+        isValid[3] = isValidRight = checkPosition(move, player, "Right", false);
+        isValid[2] = isValidUpRight = checkPosition(move, player, "UpRight", false);
 
-        if (move[0] < 8 && move[1] < 8 && this.board[move[1], move[0]].Equals(""))
+        if (move[0] < 8 && move[1] < 8 && this.board[move[1], move[0]].Equals(" "))
         {
             if (isValidUp || isValidUpLeft || isValidLeft || isValidDownLeft || isValidDown || isValidDownRight || isValidRight || isValidUpRight)
             {
-                isValid = true;
+                isValid[0] = true;
             }
             else
             {
-                isValid = false;
+                isValid[0] = false;
             }
         }
         else
         {
-            isValid = false;
+            isValid[0] = false;
         }
         return isValid;
     }
@@ -378,7 +379,7 @@ class GameBoard
     /// <param name="player">Player placing the piece. string: White or Black</param>
     /// <param name="direction">Direction to check. String: Up, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft</param>
     /// <returns>Returns: true/false</returns>
-    public bool checkPosition(int[] position, string player, string direction)
+    public bool checkPosition(int[] position, string player, string direction, bool changeIt)
     {
         bool isValid;
         int offsetHorizontal;
@@ -440,7 +441,6 @@ class GameBoard
         while ((nextPosition[0] >= 0 && nextPosition[0] < 8) && (nextPosition[1] >= 0 && nextPosition[1] < 8))
         {
             // If the piece checked equals the players color, set the lastChecked to the same and exit the loop.
-            //Supposedly.....
             if (this.board[nextPosition[0], nextPosition[1]].Equals(playerChar))
             {
                 lastChecked = player;
@@ -470,7 +470,7 @@ class GameBoard
             nextPosition[1] = nextPosition[1] + offsetVertical;
         }
 
-        if (oppositeCount > 0 && lastChecked.Equals(playerChar))
+        if (oppositeCount > 0 && Convert.ToString(lastChecked[0]).Equals(playerChar))
         {
             isValid = true;
         }
