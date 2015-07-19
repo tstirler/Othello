@@ -12,8 +12,8 @@ namespace Othello
     {
         static void Main(string[] args)
         {
-            int windowWidth = 60;
-            int windowHeigth = 50;
+            int windowWidth = 70;
+            int windowHeigth = 45;
             string player = "White";
             bool[] legalMove = new bool[9];
             int[] playerSelected = new int[2];
@@ -34,12 +34,12 @@ namespace Othello
                 gameBoard.drawGrid();
                 do
                 {
-                    playerSelected = getMove();
-                    legalMove[0] = gameBoard.checkValidMove(playerSelected, player);
+                    playerSelected = getMove(player);
+                    legalMove = gameBoard.checkValidMove(playerSelected, player);
                 } while (!legalMove[0]);
-                player = getPlayer();
+                //player = getPlayer();
 
-                gameBoard.placePiece(playerSelected, player);
+                gameBoard.placePiece(playerSelected, player, legalMove);
                 gameBoard.calculateScore();
                 gameRunning = checkValidGame(gameBoard.getScore());
                 counter++;
@@ -49,35 +49,16 @@ namespace Othello
         checkWinner(gameBoard.getScore(), counter);
         }
 
-        public static string getPlayer()
-        {
-            string player;
-            WriteAt("                                                                    ", 0, 39);
-            WriteAt("                                                                    ", 0, 40);
-            WriteAt("What player is placing the piece?", 0, 39);
-            Console.WriteLine("");
-            try
-            {
-                player = Console.ReadLine();
-            }
-            catch (Exception)
-            {
-                player = getPlayer();
-            }
-
-            return player;
-        }
-
         /// <summary>
         /// Gets input from current player for where player wants to place the piece.
         /// </summary>
         /// <returns>string</returns>
-        public static int[] getMove()
+        public static int[] getMove(string player)
         {
             int[] playerSelected = new int[2];
             WriteAt("                                                                    ", 0, 39);
             WriteAt("                                                                    ", 0, 40);
-            WriteAt("Where do you want to put your piece? x,y", 0, 39);
+            WriteAt(player + " player. Where do you want to put your piece? x,y", 0, 39);
             Console.WriteLine("");
             try
             {
@@ -85,7 +66,7 @@ namespace Othello
             }
             catch (Exception)
             {
-                playerSelected = getMove();
+                playerSelected = getMove(player);
             }
             return playerSelected;
         }
@@ -238,9 +219,17 @@ class GameBoard
     /// </summary>
     /// <param name="playerSelected">Coords for the piece. int[2]</param>
     /// <param name="player">string: White/Black</param>
-    public void placePiece(int[] playerSelected, string player) 
+    public void placePiece(int[] playerSelected, string player, bool[] toChange) 
     {
         this.board[playerSelected[0],playerSelected[1]] = Convert.ToString(player[0]);
+        checkPosition(playerSelected, player, "Up", toChange[1]);
+        checkPosition(playerSelected, player, "UpRight", toChange[2]);
+        checkPosition(playerSelected, player, "Right", toChange[3]);
+        checkPosition(playerSelected, player, "DownRight", toChange[4]);
+        checkPosition(playerSelected, player, "Down", toChange[5]);
+        checkPosition(playerSelected, player, "DownLeft", toChange[6]);
+        checkPosition(playerSelected, player, "Left", toChange[7]);
+        checkPosition(playerSelected, player, "UpLeft", toChange[8]);
     }
 
     /// <summary>
@@ -303,15 +292,15 @@ class GameBoard
         // printing the grid.
         for (int lineCount = offset; lineCount <= (8 * boxSize) + offset; lineCount += boxSize)
         {
-            //for (int horizontalLine = boxSize + offset; horizontalLine <= (9 * boxSize) + offset; horizontalLine++)
-            //{
-            //    Othello.Program.WriteAt("-", horizontalLine, lineCount);
-            //}
+            for (int horizontalLine = boxSize + offset; horizontalLine <= (9 * boxSize) + offset; horizontalLine++)
+            {
+                Othello.Program.WriteAt("-", horizontalLine, lineCount);
+            }
 
-            //for (int verticalCoord = offset; verticalCoord <= (8 * boxSize) + offset; verticalCoord++)
-            //{
-            //    Othello.Program.WriteAt("|", lineCount + boxSize, verticalCoord);
-            //}
+            for (int verticalCoord = offset; verticalCoord <= (8 * boxSize) + offset; verticalCoord++)
+            {
+                Othello.Program.WriteAt("|", lineCount + boxSize, verticalCoord);
+            }
 
             if (lineCount < 8 * boxSize)
             {
@@ -339,22 +328,22 @@ class GameBoard
     /// <param name="move">int[2]</param>
     /// <param name="player">player placing the piece</param>
     /// <returns></returns>
-    public bool checkValidMove(int[] move, string player)
+    public bool[] checkValidMove(int[] move, string player)
     {
         bool[] isValid = new bool[9];
+        
         bool isValidUp, isValidUpLeft, isValidLeft, isValidDownLeft, isValidDown, isValidDownRight, isValidRight, isValidUpRight;
 
-
         isValid[1] = isValidUp = checkPosition(move, player, "Up", false);
-        isValid[8] = isValidUpLeft = checkPosition(move, player, "UpLeft", false);
-        isValid[7] = isValidLeft = checkPosition(move, player, "Left", false);
-        isValid[6] = isValidDownLeft = checkPosition(move, player, "DownLeft", false);
-        isValid[5] = isValidDown = checkPosition(move, player, "Down", false);
-        isValid[4] = isValidDownRight = checkPosition(move, player, "DownRight", false);
-        isValid[3] = isValidRight = checkPosition(move, player, "Right", false);
         isValid[2] = isValidUpRight = checkPosition(move, player, "UpRight", false);
+        isValid[3] = isValidRight = checkPosition(move, player, "Right", false);
+        isValid[4] = isValidDownRight = checkPosition(move, player, "DownRight", false);
+        isValid[5] = isValidDown = checkPosition(move, player, "Down", false);
+        isValid[6] = isValidDownLeft = checkPosition(move, player, "DownLeft", false);
+        isValid[7] = isValidLeft = checkPosition(move, player, "Left", false);
+        isValid[8] = isValidUpLeft = checkPosition(move, player, "UpLeft", false);
 
-        if (move[0] < 8 && move[1] < 8 && this.board[move[1], move[0]].Equals(" "))
+        if (move[0] < 8 && move[1] < 8 && this.board[move[0], move[1]].Equals(" "))
         {
             if (isValidUp || isValidUpLeft || isValidLeft || isValidDownLeft || isValidDown || isValidDownRight || isValidRight || isValidUpRight)
             {
@@ -379,7 +368,7 @@ class GameBoard
     /// <param name="player">Player placing the piece. string: White or Black</param>
     /// <param name="direction">Direction to check. String: Up, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft</param>
     /// <returns>Returns: true/false</returns>
-    public bool checkPosition(int[] position, string player, string direction, bool changeIt)
+    public bool checkPosition(int[] position, string player, string direction, bool toChange)
     {
         bool isValid;
         int offsetHorizontal;
@@ -454,6 +443,17 @@ class GameBoard
             }
 
             oppositeCount++;
+            if (toChange)
+            {
+                if (player.Equals("White")) {
+                    this.board[nextPosition[0], nextPosition[1]] = "W";
+                }
+                else
+                {
+                    this.board[nextPosition[0], nextPosition[1]] = "B";
+                }
+                
+            }
             
             //If none of the above stops the loop, set lastChecked to opposite color of player.
             if (player.Equals("White"))
