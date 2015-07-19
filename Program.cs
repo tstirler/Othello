@@ -10,10 +10,17 @@ namespace Othello
 {
     class Program
     {
+        public static int counter;
+        static Random rnd = new Random();
+
         static void Main(string[] args)
         {
             int windowWidth = 70;
             int windowHeigth = 45;
+            int numberOfPlayers;
+            bool playerOne;
+            bool playerTwo;
+            int aiTries;
             string player = "White";
             bool[] legalMove = new bool[9];
             int[] playerSelected = new int[2];
@@ -23,23 +30,67 @@ namespace Othello
             gameBoard.initializeBoard();
             gameBoard.calculateScore();
 
-            int counter = 0;
+            
             bool gameRunning = true;
 
             Console.Clear();
+
+            numberOfPlayers = getNumberOfPLayers();
+            switch (numberOfPlayers)
+            {
+                case 0:
+                    playerOne = false;
+                    playerTwo = false;
+                    break;
+                case 1:
+                    playerOne = true;
+                    playerTwo = false;
+                    break;
+                case 2:
+                    playerOne = true;
+                    playerTwo = true;
+                    break;
+                default:
+                    playerOne = true;
+                    playerTwo = true;
+                    break;
+            }
             
             while (gameRunning)
             {
+                showPlayer(player);
+                showTurn();
                 WriteAt("White: " + gameBoard.getScore(0) + " - " + "Black: " + gameBoard.getScore(1), (windowWidth / 3) - 8, 0);
                 gameBoard.drawGrid();
-                do
+                if ((playerOne && player.Equals("White")) || (playerTwo && player.Equals("Black")))
                 {
-                    playerSelected = getMove(player);
-                    legalMove = gameBoard.checkValidMove(playerSelected, player);
-                } while (!legalMove[0]);
-                //player = getPlayer();
+                    do
+                    {
+                        showPlayer(player);
+                        playerSelected = getMove(player);
+                        legalMove = gameBoard.checkValidMove(playerSelected, player);
+                    } while (!legalMove[0]);
+                }
 
-                gameBoard.placePiece(playerSelected, player, legalMove);
+                if ((!playerOne && player.Equals("White")) || (!playerTwo && player.Equals("Black")))
+                {
+                    aiTries = 0;
+                    do
+                    {
+                        showPlayer(player);
+                        playerSelected[0] = rnd.Next(8);
+                        playerSelected[1] = rnd.Next(8);
+                        legalMove = gameBoard.checkValidMove(playerSelected, player);
+                        
+                    } while (!legalMove[0] || aiTries < 14);
+
+                }
+
+                if (legalMove[0])
+                {
+                    gameBoard.placePiece(playerSelected, player, legalMove);
+                }
+
                 gameBoard.calculateScore();
                 gameRunning = checkValidGame(gameBoard.getScore());
                 counter++;
@@ -49,24 +100,50 @@ namespace Othello
         checkWinner(gameBoard.getScore(), counter);
         }
 
+        public static void showTurn()
+        {
+            WriteAt("" + counter, 0, 0);
+        }
+
+        public static void showPlayer(string player)
+        {
+            WriteAt("                            ", 0, 38);
+            WriteAt("Player: " + player, 0, 38);
+        }
+
         /// <summary>
         /// Gets input from current player for where player wants to place the piece.
         /// </summary>
         /// <returns>string</returns>
         public static int[] getMove(string player)
         {
+            showPlayer(player);
+            showTurn();
+            string playerEntered;
             int[] playerSelected = new int[2];
             WriteAt("                                                                    ", 0, 39);
             WriteAt("                                                                    ", 0, 40);
-            WriteAt(player + " player. Where do you want to put your piece? x,y", 0, 39);
+            WriteAt(player + " player. Where do you want to put your piece? x,y or Pass", 0, 39);
             Console.WriteLine("");
-            try
-            {
-                playerSelected = inputPosition(Console.ReadLine());
-            }
-            catch (Exception)
-            {
-                playerSelected = getMove(player);
+            playerEntered = Console.ReadLine();
+            if (playerEntered.ToUpper().Equals("PASS"))
+                {
+                    player = changePlayer(player);
+                    counter++;
+                    getMove(player);
+                }
+                else
+                {
+                try
+                {
+                
+                    playerSelected = inputPosition(playerEntered);
+                
+                }
+                catch (Exception)
+                {
+                    playerSelected = getMove(player);
+                }
             }
             return playerSelected;
         }
@@ -184,6 +261,23 @@ namespace Othello
                 Console.WriteLine(e.Message);
             }
         }
+
+        public static int getNumberOfPLayers()
+        {
+            int numberOfPlayers = 2;
+            WriteAt("How many players? (0, 1 or 2)", 0, 30);
+            try
+            {
+                numberOfPlayers = Convert.ToInt32(Console.ReadLine());
+            }
+            catch(Exception)
+            {
+                getNumberOfPLayers();
+            }
+            Console.Clear();
+            return numberOfPlayers;
+
+        }
     }
 }
 
@@ -292,15 +386,15 @@ class GameBoard
         // printing the grid.
         for (int lineCount = offset; lineCount <= (8 * boxSize) + offset; lineCount += boxSize)
         {
-            for (int horizontalLine = boxSize + offset; horizontalLine <= (9 * boxSize) + offset; horizontalLine++)
-            {
-                Othello.Program.WriteAt("-", horizontalLine, lineCount);
-            }
+            //for (int horizontalLine = boxSize + offset; horizontalLine <= (9 * boxSize) + offset; horizontalLine++)
+            //{
+            //    Othello.Program.WriteAt("-", horizontalLine, lineCount);
+            //}
 
-            for (int verticalCoord = offset; verticalCoord <= (8 * boxSize) + offset; verticalCoord++)
-            {
-                Othello.Program.WriteAt("|", lineCount + boxSize, verticalCoord);
-            }
+            //for (int verticalCoord = offset; verticalCoord <= (8 * boxSize) + offset; verticalCoord++)
+            //{
+            //    Othello.Program.WriteAt("|", lineCount + boxSize, verticalCoord);
+            //}
 
             if (lineCount < 8 * boxSize)
             {
