@@ -81,8 +81,9 @@ namespace Othello
                         playerSelected[0] = rnd.Next(8);
                         playerSelected[1] = rnd.Next(8);
                         legalMove = gameBoard.checkValidMove(playerSelected, player);
+                        aiTries++;
                         
-                    } while (!legalMove[0] || aiTries < 14);
+                    } while (!legalMove[0] && aiTries < 14);
 
                 }
 
@@ -130,7 +131,6 @@ namespace Othello
                 {
                     player = changePlayer(player);
                     counter++;
-                    getMove(player);
                 }
                 else
                 {
